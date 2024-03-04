@@ -1,36 +1,36 @@
-// SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.7;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract Token{
-
-    string public tokenName = 'MetaToken';
-    string public tokenAbbrev = 'MTK';
-    uint public totalSupply ;
-
-    mapping(address => uint) public balance;
-
-    function mint(address sender, uint _amount) public {
-        require(_amount > 0 , "amount cannot be less than zero ");
-        totalSupply += _amount;
-        balance[sender] += _amount;
+contract Token is ERC20 {
+ address public immutable owner;
+    constructor() ERC20("Token", "DT") {
+        owner = msg.sender;
+        _mint(msg.sender, 10**decimals()); // Mint initial supply (1 billion tokens)
     }
-    function burn(address _sender, uint _amount) public {
-         if( _sender != msg.sender){
-            revert("you are not the owner");
-        }
-        totalSupply -= _amount;
-        balance[_sender] -= _amount;
+    error NotOwner();
+  modifier onlyOwner() {
+        if (msg.sender != owner) revert NotOwner();
+        _;
+    }
+    // Mint new tokens (only the owner can call this function)
+    function mint(address account, uint256 amount) public onlyOwner {
+        _mint(account, amount);
     }
 
-    function transfer( address _recipient, uint _amount) public{
-        require(msg.sender != _recipient,"you can not transfer to yourself ");
-        assert(balance[msg.sender] >= _amount );
-        balance[msg.sender] -= _amount;
-        balance[_recipient] += _amount;
-        //  assert(balance[msg.sender] + balance[_recipient] == balance[msg.sender] + _amount);
-
+    // Transfer tokens
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
     }
 
+
+    // Burn tokens
+    function burn(uint256 amount) public {
+        _burn(msg.sender, amount);
+    }
 
 }
